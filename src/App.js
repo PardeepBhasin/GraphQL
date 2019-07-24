@@ -1,26 +1,56 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import React, { Component } from 'react'
+import gql from 'graphql-tag'
+import {graphql} from 'react-apollo';
+import CreateUser from './createUser';
+class UserDetails extends Component {
+  deleteUser(id) {
+    this.props.mutate({
+      variables: {
+        id
+      },
+      refetchQueries: [{query: gql`{
+        users {
+          title,
+          id
+        }
+      }`}]
+    })
+  }
+  renderUsers() {
+    return this.props.data && this.props.data.users && this.props.data.users.map((user) => {
+      return (
+        <li key={user.title}>
+          {user.title} <button onClick={() => this.deleteUser(user.id)}>Delete User</button>
+        </li>
+      )
+    })
+  }
+  render() {
+    return(
+      <React.Fragment>
+        Existing Users -
+        <ul>{this.renderUsers()}</ul>
+        <CreateUser/>
+      </React.Fragment>
+    )
+  }
 }
 
-export default App;
+const query = gql`{
+  users {
+    title,
+    id
+  }
+}`;
+
+const mutation = gql`
+  mutation DeleteUser($id: String) {
+    deleteUser(id: $id) {
+      id
+    }
+  }
+`;
+
+export default graphql(mutation) (
+  graphql(query)(UserDetails)
+)
